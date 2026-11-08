@@ -383,7 +383,7 @@
       const h = v / max * (H - 30);
       return `<rect x="${pad + i * bw + 2}" y="${H - 18 - h}" width="${bw - 4}" height="${Math.max(h, v ? 2 : 0)}" rx="3" class="xpbar"><title>${days[i].d.toLocaleDateString("fr-FR")} : ${v} XP</title></rect>`;
     }).join("");
-    const labels = [0, 10, 20, 29].map(i => `<text x="${pad + i * bw + bw / 2}" y="${H - 4}" class="axis" text-anchor="middle">${days[i].d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}</text>`).join("");
+    const labels = [0, 10, 20, 29].map(i => `<text x="${i === 29 ? W : pad + i * bw + bw / 2}" y="${H - 4}" class="axis" text-anchor="${i === 29 ? "end" : "middle"}">${days[i].d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}</text>`).join("");
     return `<svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="XP par jour">
       <line x1="${pad}" x2="${W}" y1="${H - 18}" y2="${H - 18}" class="gridline"/>
       <line x1="${pad}" x2="${W}" y1="${12}" y2="${12}" class="gridline dash"/>
