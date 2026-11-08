@@ -74,6 +74,22 @@
   /* ---------------- Langue (FR / EN) ---------------- */
   const EN = window.INTERVIEWS_EN || { cats: {}, q: {} };
   const MEN = window.MODULES_EN || {};
+  // Questions supplémentaires (FR + EN dans le même objet)
+  (window.INTERVIEWS_EXTRA || []).forEach(x => {
+    if (INTERVIEWS.some(q => q.id === x.id)) return;
+    INTERVIEWS.push({ id: x.id, role: x.role, cat: x.cat, diff: x.diff, q: x.q, a: x.a });
+    EN.q[x.id] = { q: x.qEn, a: x.aEn };
+  });
+  Object.assign(EN.cats, {
+    "Exécution & salle de marché": "Execution & trading floor",
+    "Taux & financement": "Rates & funding",
+    "Crédit, FX & matières premières": "Credit, FX & commodities",
+    "Options & volatilité": "Options & volatility",
+    "Structuration": "Structuring",
+    "Gestion de portefeuille": "Portfolio management",
+    "Macro & actualité": "Macro & current affairs",
+    "Risque, conformité & données": "Risk, compliance & data"
+  });
   const isEn = () => S.lang === "en";
   const T = (fr, en) => isEn() ? en : fr;
   function localize() {
@@ -649,12 +665,12 @@ ${MODULES.map((m, i) => {
     const tot = INTERVIEWS.filter(q => q.role === ivFilter.role);
     const ok = tot.filter(q => S.interview[q.id] === "ok").length;
     $app.innerHTML = `
-<div class="page-h"><h1>Questions d’entretien</h1><p class="muted">Réfléchis à ta réponse (à voix haute, idéalement en moins de 2 minutes), puis révèle la réponse modèle et auto-évalue-toi. +15 XP par question maîtrisée.</p></div>
+<div class="page-h"><h1>${T("Questions d’entretien", "Interview questions")}</h1><p class="muted">${T("Réfléchis à ta réponse (à voix haute, idéalement en moins de 2 minutes), puis révèle la réponse modèle et auto-évalue-toi. +15 XP par question maîtrisée.", "Think through your answer (out loud, ideally in under 2 minutes), then reveal the model answer and rate yourself. +15 XP per mastered question.")}</p></div>
 ${langToggle()}
 <div class="tabs">
   <button class="tab ${ivFilter.role === "FO" ? "on" : ""}" data-role="FO"><i class="fa-solid fa-chart-line"></i> Front Office</button>
   <button class="tab ${ivFilter.role === "BO" ? "on" : ""}" data-role="BO"><i class="fa-solid fa-gears"></i> Middle & Back Office</button>
-  <a class="tab" href="#/simulation"><i class="fa-solid fa-user-tie"></i> Simulation d’entretien</a>
+  <a class="tab" href="#/simulation"><i class="fa-solid fa-user-tie"></i> ${T("Simulation d’entretien", "Mock interview")}</a>
 </div>
 <div class="filters">
   ${cats.map(c => `<button class="chip ${ivFilter.cat === c ? "on" : ""}" data-cat="${esc(c)}">${catLabel(c)}</button>`).join("")}
@@ -710,14 +726,14 @@ ${langToggle()}
   /* ---------------- Simulation d’entretien (chrono) ---------------- */
   function viewSimulation() {
     $app.innerHTML = `
-<div class="page-h"><h1>Simulation d’entretien</h1><p class="muted">Tirage aléatoire de questions. 2 minutes par réponse, à voix haute. Comme en superday.</p></div>
+<div class="page-h"><h1>${T("Simulation d’entretien", "Mock interview")}</h1><p class="muted">${T("Tirage aléatoire de questions. 2 minutes par réponse, à voix haute. Comme en superday.", "Random questions. 2 minutes per answer, out loud. Just like a superday.")}</p></div>
 <div class="sim-setup card">
   ${langToggle()}
-  <h3>Choisis ton format</h3>
+  <h3>${T("Choisis ton format", "Choose your format")}</h3>
   <div class="row-btns">
     <button class="btn" data-sim="FO"><i class="fa-solid fa-chart-line"></i> Front Office (6 questions)</button>
     <button class="btn" data-sim="BO"><i class="fa-solid fa-gears"></i> Middle/Back Office (6 questions)</button>
-    <button class="btn ghost" data-sim="ALL"><i class="fa-solid fa-shuffle"></i> Mixte (8 questions)</button>
+    <button class="btn ghost" data-sim="ALL"><i class="fa-solid fa-shuffle"></i> ${T("Mixte", "Mixed")} (8 questions)</button>
   </div>
 </div>`;
     $app.querySelectorAll("[data-sim]").forEach(b => b.onclick = () => runSim(b.dataset.sim));
