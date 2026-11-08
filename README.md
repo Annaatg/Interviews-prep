@@ -8,6 +8,9 @@ Application web **gamifiée** pour apprendre la finance de marché et préparer 
 - **57 questions d’entretien en français et en anglais** (sélecteur FR/EN) (Front Office : comportemental, marchés & pitch, technique, brain teasers ; Middle/Back Office : opérations, risque, comportemental) avec réponses modèles et simulation chronométrée
 - **Trading Arena** : sprint de calcul mental (60 s) et jeu de market making sur 3 dés
 
+## Langues
+Bouton **FR / EN** dans l’en-tête : modules, leçons, quiz, flashcards, glossaire et questions d’entretien existent en français et en anglais. La progression est commune aux deux langues.
+
 ## Gamification & suivi
 XP, 7 niveaux (Stagiaire → Managing Director), série de jours, 15 badges, défi du jour, combos.
 Le **dashboard** affiche : activité sur 30 jours, radar des compétences, maîtrise par module, préparation aux entretiens FO/BO, heatmap de régularité, historique des quiz.

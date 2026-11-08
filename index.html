@@ -15,18 +15,19 @@
   <header class="topbar">
     <a class="brand" href="#/"><span class="logo"><i class="fa-solid fa-chart-simple"></i></span><span>Trading Floor <b>Academy</b></span></a>
     <nav class="nav">
-      <a href="#/"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
-      <a href="#/modules" data-match="#/module"><i class="fa-solid fa-book-open"></i> Modules</a>
-      <a href="#/flashcards" data-match="#/flash"><i class="fa-solid fa-clone"></i> Flashcards</a>
-      <a href="#/entretiens" data-match="#/simulation"><i class="fa-solid fa-user-tie"></i> Entretiens</a>
-      <a href="#/arena" data-match="#/arena"><i class="fa-solid fa-dice"></i> Arena</a>
-      <a href="#/glossaire"><i class="fa-solid fa-spell-check"></i> Glossaire</a>
-      <a href="#/ressources"><i class="fa-solid fa-compass"></i> Ressources</a>
+      <a href="#/"><i class="fa-solid fa-gauge-high"></i> <span>Dashboard</span></a>
+      <a href="#/modules" data-match="#/module"><i class="fa-solid fa-book-open"></i> <span>Modules</span></a>
+      <a href="#/flashcards" data-match="#/flash"><i class="fa-solid fa-clone"></i> <span>Flashcards</span></a>
+      <a href="#/entretiens" data-match="#/simulation"><i class="fa-solid fa-user-tie"></i> <span>Entretiens</span></a>
+      <a href="#/arena" data-match="#/arena"><i class="fa-solid fa-dice"></i> <span>Arena</span></a>
+      <a href="#/glossaire"><i class="fa-solid fa-spell-check"></i> <span>Glossaire</span></a>
+      <a href="#/ressources"><i class="fa-solid fa-compass"></i> <span>Ressources</span></a>
     </nav>
     <div class="player">
       <div class="p-level" id="hdr-level"></div>
       <div class="p-xp"><span id="hdr-xp"></span><div class="bar mini"><span id="hdr-bar"></span></div></div>
       <div class="p-streak" id="hdr-streak" title="Série de jours"></div>
+      <button class="lang-btn" id="lang-btn" type="button">🇫🇷 FR</button>
     </div>
     <button class="burger" id="burger" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
   </header>
@@ -34,9 +35,10 @@
   <main id="app" class="container"></main>
   <div id="toasts"></div>
 
-  <footer class="foot">Trading Floor Academy · contenu pédagogique, pas un conseil en investissement · progression stockée localement dans ton navigateur</footer>
+  <footer class="foot" id="foot">Trading Floor Academy · contenu pédagogique, pas un conseil en investissement · progression stockée localement dans ton navigateur</footer>
 
   <script src="js/data-modules.js"></script>
+  <script src="js/data-modules-en.js"></script>
   <script src="js/data-interviews.js"></script>
   <script src="js/data-interviews-en.js"></script>
   <script src="js/app.js"></script>

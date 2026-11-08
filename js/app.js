@@ -5,7 +5,8 @@
 (function () {
   "use strict";
 
-  const MODULES = window.MODULES;
+  const MODULES_FR = window.MODULES;
+  let MODULES = MODULES_FR;
   const INTERVIEWS = window.INTERVIEWS;
   const STORE_KEY = "tfa-progress-v1";
   const $app = document.getElementById("app");
@@ -55,7 +56,7 @@
       streak: { count: 0, last: null },
       badges: {},         // { id: date }
       name: "",
-      ivLang: "fr"        // langue des questions d’entretien
+      lang: "fr"          // langue du contenu : "fr" | "en"
     };
   }
 
@@ -67,6 +68,31 @@
     } catch (e) { return defaultState(); }
   }
   let S = load();
+  if (S.ivLang === "en" && !S._langMigrated) { S.lang = "en"; }
+  S._langMigrated = true;
+
+  /* ---------------- Langue (FR / EN) ---------------- */
+  const EN = window.INTERVIEWS_EN || { cats: {}, q: {} };
+  const MEN = window.MODULES_EN || {};
+  const isEn = () => S.lang === "en";
+  const T = (fr, en) => isEn() ? en : fr;
+  function localize() {
+    if (!isEn()) return MODULES_FR;
+    return MODULES_FR.map(m => {
+      const e = MEN[m.id]; if (!e) return m;
+      return Object.assign({}, m, {
+        title: e.title, level: e.level, summary: e.summary,
+        lessons: m.lessons.map((l, i) => e.lessons[i] || l),
+        quiz: m.quiz.map((q, i) => e.quiz[i] ? Object.assign({}, q, e.quiz[i], { a: q.a }) : q),
+        flashcards: m.flashcards.map((c, i) => e.flashcards[i] || c)
+      });
+    });
+  }
+  function setLang(l) {
+    S.lang = l; MODULES = localize(); save();
+    document.documentElement.lang = l;
+    route();
+  }
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* stockage indisponible */ } }
 
   /* ---------------- Utilitaires ---------------- */
@@ -189,6 +215,12 @@
     document.getElementById("hdr-xp").textContent = fmt(S.xp) + " XP";
     document.getElementById("hdr-streak").innerHTML = `<i class="fa-solid fa-fire"></i> ${S.streak.count}`;
     document.getElementById("hdr-bar").style.width = Math.round(L.pct * 100) + "%";
+    const NAV = { "#/": ["Dashboard", "Dashboard"], "#/modules": ["Modules", "Modules"], "#/flashcards": ["Flashcards", "Flashcards"], "#/entretiens": ["Entretiens", "Interviews"], "#/arena": ["Arena", "Arena"], "#/glossaire": ["Glossaire", "Glossary"], "#/ressources": ["Ressources", "Resources"] };
+    document.querySelectorAll(".nav a").forEach(a => { const n = NAV[a.getAttribute("href")]; const sp = a.querySelector("span"); if (n && sp) sp.textContent = T(n[0], n[1]); });
+    const ft = document.getElementById("foot");
+    if (ft) ft.textContent = T("Trading Floor Academy · contenu pédagogique, pas un conseil en investissement · progression stockée localement dans ton navigateur", "Trading Floor Academy · educational content, not investment advice · progress stored locally in your browser");
+    const lb = document.getElementById("lang-btn");
+    if (lb) { lb.textContent = isEn() ? "🇬🇧 EN" : "🇫🇷 FR"; lb.title = T("Passer en anglais", "Switch to French"); }
     document.querySelectorAll(".nav a").forEach(a => {
       const r = location.hash || "#/";
       a.classList.toggle("active", a.getAttribute("href") === r || !!(a.dataset.match && r.startsWith(a.dataset.match)));
@@ -404,7 +436,7 @@
   /* ---------------- Liste des modules ---------------- */
   function viewModules() {
     $app.innerHTML = `
-<div class="page-h"><h1>Parcours d’apprentissage</h1><p class="muted">11 modules couvrant tout ce qu’il faut savoir pour une salle de marchés : produits, macro, risque et post-marché.</p></div>
+<div class="page-h"><h1>${T("Parcours d’apprentissage", "Learning path")}</h1><p class="muted">${T("11 modules couvrant tout ce qu’il faut savoir pour une salle de marchés : produits, macro, risque et post-marché.", "11 modules covering everything you need to know for a trading floor: products, macro, risk and post-trade.")}</p></div>
 <div class="mod-grid">
 ${MODULES.map((m, i) => {
   const v = mastery(m);
@@ -413,9 +445,9 @@ ${MODULES.map((m, i) => {
     <div class="muted small">Module ${i + 1}</div>
     <h3>${m.title}</h3>
     <p class="muted small">${m.summary}</p>
-    <div class="mc-meta small muted"><span><i class="fa-solid fa-book-open"></i> ${m.lessons.length} leçons</span><span><i class="fa-solid fa-circle-question"></i> ${m.quiz.length} questions</span><span><i class="fa-solid fa-clone"></i> ${m.flashcards.length} cartes</span></div>
+    <div class="mc-meta small muted"><span><i class="fa-solid fa-book-open"></i> ${m.lessons.length} ${T("leçons", "lessons")}</span><span><i class="fa-solid fa-circle-question"></i> ${m.quiz.length} questions</span><span><i class="fa-solid fa-clone"></i> ${m.flashcards.length} ${T("cartes", "cards")}</span></div>
     <div class="bar"><span style="width:${v}%;background:${m.color}"></span></div>
-    <div class="small"><b>${v}%</b> maîtrisé</div>
+    <div class="small"><b>${v}%</b> ${T("maîtrisé", "mastered")}</div>
   </a>`;
 }).join("")}
 </div>`;
@@ -433,30 +465,30 @@ ${MODULES.map((m, i) => {
 <div class="module-head" style="--c:${m.color}">
   <span class="mc-icon big"><i class="fa-solid ${m.icon}"></i></span>
   <div><h1>${m.title}</h1><p class="muted">${m.summary}</p></div>
-  <div class="mh-score"><div class="kpi-v">${mastery(m)}%</div><div class="muted small">maîtrise</div></div>
+  <div class="mh-score"><div class="kpi-v">${mastery(m)}%</div><div class="muted small">${T("maîtrise", "mastery")}</div></div>
 </div>
 <div class="module-layout">
   <aside class="lesson-nav card">
-    <div class="muted small" style="margin-bottom:8px">Leçons</div>
+    <div class="muted small" style="margin-bottom:8px">${T("Leçons", "Lessons")}</div>
     ${m.lessons.map((l, i) => `<a href="#/module/${m.id}/${i}" class="${i === li ? "on" : ""}"><i class="fa-solid ${read.includes(i) ? "fa-circle-check ok" : "fa-circle"}"></i> ${l.title}</a>`).join("")}
     <hr>
     <a href="#/quiz/${m.id}" class="act"><i class="fa-solid fa-circle-question"></i> Quiz (${m.quiz.length} q.) ${q ? `<span class="pill">${q.best}%</span>` : ""}</a>
     <a href="#/flash/${m.id}" class="act"><i class="fa-solid fa-clone"></i> Flashcards (${m.flashcards.length})</a>
   </aside>
   <article class="lesson card">
-    <div class="muted small">Leçon ${li + 1}/${m.lessons.length}</div>
+    <div class="muted small">${T("Leçon", "Lesson")} ${li + 1}/${m.lessons.length}</div>
     <h2>${L.title}</h2>
     <div class="lesson-body">${L.html}</div>
     <div class="lesson-foot">
-      ${li > 0 ? `<a class="btn ghost" href="#/module/${m.id}/${li - 1}"><i class="fa-solid fa-arrow-left"></i> Précédente</a>` : "<span></span>"}
-      <button class="btn" id="done">${read.includes(li) ? '<i class="fa-solid fa-check"></i> Lue' : "J’ai compris (+10 XP)"}</button>
-      ${li < m.lessons.length - 1 ? `<a class="btn ghost" href="#/module/${m.id}/${li + 1}">Suivante <i class="fa-solid fa-arrow-right"></i></a>` : `<a class="btn ghost" href="#/quiz/${m.id}">Passer le quiz <i class="fa-solid fa-arrow-right"></i></a>`}
+      ${li > 0 ? `<a class="btn ghost" href="#/module/${m.id}/${li - 1}"><i class="fa-solid fa-arrow-left"></i> ${T("Précédente", "Previous")}</a>` : "<span></span>"}
+      <button class="btn" id="done">${read.includes(li) ? '<i class="fa-solid fa-check"></i> ' + T("Lue", "Read") : T("J’ai compris (+10 XP)", "Got it (+10 XP)")}</button>
+      ${li < m.lessons.length - 1 ? `<a class="btn ghost" href="#/module/${m.id}/${li + 1}">${T("Suivante", "Next")} <i class="fa-solid fa-arrow-right"></i></a>` : `<a class="btn ghost" href="#/quiz/${m.id}">${T("Passer le quiz", "Take the quiz")} <i class="fa-solid fa-arrow-right"></i></a>`}
     </div>
   </article>
 </div>`;
     document.getElementById("done").onclick = () => {
       const arr = S.lessons[m.id] = S.lessons[m.id] || [];
-      if (!arr.includes(li)) { arr.push(li); addXP(10, "Leçon lue"); }
+      if (!arr.includes(li)) { arr.push(li); addXP(10, T("Leçon lue", "Lesson read")); }
       if (li < m.lessons.length - 1) location.hash = `#/module/${m.id}/${li + 1}`;
       else location.hash = `#/quiz/${m.id}`;
     };
@@ -469,9 +501,9 @@ ${MODULES.map((m, i) => {
       const all = [];
       MODULES.forEach(m => m.quiz.forEach(q => all.push(Object.assign({ mod: m.id }, q))));
       questions = shuffle(all).slice(0, isDaily ? 5 : 15);
-      title = isDaily ? "Défi du jour" : "Quiz mixte — tous modules";
+      title = isDaily ? T("Défi du jour", "Daily challenge") : T("Quiz mixte — tous modules", "Mixed quiz — all modules");
       if (isDaily && S.daily.last === today()) {
-        $app.innerHTML = `<div class="card center"><h2>Défi déjà réalisé aujourd’hui ✅</h2><p class="muted">Reviens demain pour garder ta série. En attendant :</p><a class="btn" href="#/quiz/mix">Quiz mixte</a></div>`;
+        $app.innerHTML = `<div class="card center"><h2>${T("Défi déjà réalisé aujourd’hui ✅", "Challenge already done today ✅")}</h2><p class="muted">${T("Reviens demain pour garder ta série. En attendant :", "Come back tomorrow to keep your streak. In the meantime:")}</p><a class="btn" href="#/quiz/mix">${T("Quiz mixte", "Mixed quiz")}</a></div>`;
         return;
       }
     } else {
@@ -522,8 +554,8 @@ ${MODULES.map((m, i) => {
         [...btns].find(b => +b.dataset.i === i).classList.add("bad");
       }
       document.getElementById("fb").innerHTML = `
-        <div class="feedback ${ok ? "ok" : "ko"}"><b>${ok ? "✅ Correct !" : "❌ Raté"}</b> ${q.e}</div>
-        <button class="btn" id="next">${idx + 1 < questions.length ? "Question suivante" : "Voir le résultat"} <i class="fa-solid fa-arrow-right"></i></button>`;
+        <div class="feedback ${ok ? "ok" : "ko"}"><b>${ok ? T("✅ Correct !", "✅ Correct!") : T("❌ Raté", "❌ Wrong")}</b> ${q.e}</div>
+        <button class="btn" id="next">${idx + 1 < questions.length ? T("Question suivante", "Next question") : T("Voir le résultat", "See result")} <i class="fa-solid fa-arrow-right"></i></button>`;
       document.getElementById("next").onclick = () => { idx++; show(); };
       save();
     }
@@ -540,18 +572,18 @@ ${MODULES.map((m, i) => {
       if (isDaily) { S.daily.last = today(); S.daily.count++; bonus = 30; }
       if (isMix && pct >= 80) bonus = 40;
       checkBadges(); save();
-      addXP(xpRun + bonus, isDaily ? "Défi du jour" : "Quiz");
-      const msg = pct === 100 ? "Parfait — digne d’un desk head !" : pct >= 80 ? "Excellent travail !" : pct >= 60 ? "Pas mal, encore un effort." : "À retravailler — relis les leçons.";
+      addXP(xpRun + bonus, isDaily ? T("Défi du jour", "Daily challenge") : "Quiz");
+      const msg = pct === 100 ? T("Parfait — digne d’un desk head !", "Perfect — desk head material!") : pct >= 80 ? T("Excellent travail !", "Excellent work!") : pct >= 60 ? T("Pas mal, encore un effort.", "Not bad, keep pushing.") : T("À retravailler — relis les leçons.", "Needs work — review the lessons.");
       $app.innerHTML = `
 <div class="quiz card center">
   <div class="score-ring">${pct}%</div>
   <h2>${msg}</h2>
-  <p class="muted">${score}/${questions.length} bonnes réponses · +${xpRun + bonus} XP${bonus ? ` (dont ${bonus} bonus)` : ""}</p>
+  <p class="muted">${score}/${questions.length} ${T("bonnes réponses", "correct answers")} · +${xpRun + bonus} XP${bonus ? ` (${T("dont", "incl.")} ${bonus} bonus)` : ""}</p>
   <div class="row-btns center">
-    <a class="btn" href="#/quiz/${id}" onclick="setTimeout(()=>window.dispatchEvent(new HashChangeEvent('hashchange')),0)"><i class="fa-solid fa-rotate"></i> Recommencer</a>
-    ${(!isDaily && !isMix) ? `<a class="btn ghost" href="#/flash/${id}"><i class="fa-solid fa-clone"></i> Flashcards</a><a class="btn ghost" href="#/module/${id}">Revoir le module</a>` : `<a class="btn ghost" href="#/">Dashboard</a>`}
+    <a class="btn" href="#/quiz/${id}" onclick="setTimeout(()=>window.dispatchEvent(new HashChangeEvent('hashchange')),0)"><i class="fa-solid fa-rotate"></i> ${T("Recommencer", "Try again")}</a>
+    ${(!isDaily && !isMix) ? `<a class="btn ghost" href="#/flash/${id}"><i class="fa-solid fa-clone"></i> Flashcards</a><a class="btn ghost" href="#/module/${id}">${T("Revoir le module", "Review the module")}</a>` : `<a class="btn ghost" href="#/">Dashboard</a>`}
   </div>
-  ${missed.length ? `<div class="review"><h3>À revoir</h3>${missed.map(q => `<div class="rv"><b>${q.q}</b><div class="muted">Réponse : ${q.o[q.a]} — ${q.e}</div></div>`).join("")}</div>` : ""}
+  ${missed.length ? `<div class="review"><h3>${T("À revoir", "To review")}</h3>${missed.map(q => `<div class="rv"><b>${q.q}</b><div class="muted">${T("Réponse", "Answer")} : ${q.o[q.a]} — ${q.e}</div></div>`).join("")}</div>` : ""}
 </div>`;
       if (pct === 100) confetti();
     }
@@ -566,23 +598,23 @@ ${MODULES.map((m, i) => {
     pick.forEach(m => m.flashcards.forEach((c, i) => cards.push({ key: m.id + ":" + i, f: c[0], b: c[1], m })));
     cards = shuffle(cards).sort((a, b) => (S.flash[a.key] || 0) - (S.flash[b.key] || 0)).slice(0, 20);
     let idx = 0, known = 0;
-    const title = id === "all" ? "Toutes les flashcards" : pick[0].title;
+    const title = id === "all" ? T("Toutes les flashcards", "All flashcards") : pick[0].title;
 
     function show() {
       if (idx >= cards.length) {
-        $app.innerHTML = `<div class="card center"><h2>Session terminée 🎯</h2><p class="muted">${known}/${cards.length} cartes connues.</p>
-          <div class="row-btns center"><a class="btn" href="#/flash/${id}" onclick="setTimeout(()=>window.dispatchEvent(new HashChangeEvent('hashchange')),0)">Nouvelle session</a><a class="btn ghost" href="#/">Dashboard</a></div></div>`;
+        $app.innerHTML = `<div class="card center"><h2>${T("Session terminée 🎯", "Session complete 🎯")}</h2><p class="muted">${known}/${cards.length} ${T("cartes connues.", "cards known.")}</p>
+          <div class="row-btns center"><a class="btn" href="#/flash/${id}" onclick="setTimeout(()=>window.dispatchEvent(new HashChangeEvent('hashchange')),0)">${T("Nouvelle session", "New session")}</a><a class="btn ghost" href="#/">Dashboard</a></div></div>`;
         return;
       }
       const c = cards[idx], box = S.flash[c.key] || 0;
       $app.innerHTML = `
 <div class="crumbs"><a href="#/flashcards">Flashcards</a> / ${title}</div>
 <div class="flash-wrap">
-  <div class="quiz-top"><span class="muted small"><i class="fa-solid ${c.m.icon}" style="color:${c.m.color}"></i> ${c.m.title}</span><span class="small">${idx + 1}/${cards.length} · boîte ${box}/4</span></div>
-  <div class="flashcard" id="fc"><div class="fc-inner"><div class="fc-front">${esc(c.f)}<span class="muted small">Clique ou appuie sur Espace pour retourner</span></div><div class="fc-back">${esc(c.b)}</div></div></div>
+  <div class="quiz-top"><span class="muted small"><i class="fa-solid ${c.m.icon}" style="color:${c.m.color}"></i> ${c.m.title}</span><span class="small">${idx + 1}/${cards.length} · ${T("boîte", "box")} ${box}/4</span></div>
+  <div class="flashcard" id="fc"><div class="fc-inner"><div class="fc-front">${esc(c.f)}<span class="muted small">${T("Clique ou appuie sur Espace pour retourner", "Click or press Space to flip")}</span></div><div class="fc-back">${esc(c.b)}</div></div></div>
   <div class="row-btns center" id="fcb" style="visibility:hidden">
-    <button class="btn danger ghost" id="no"><i class="fa-solid fa-xmark"></i> À revoir</button>
-    <button class="btn ok" id="yes"><i class="fa-solid fa-check"></i> Je savais</button>
+    <button class="btn danger ghost" id="no"><i class="fa-solid fa-xmark"></i> ${T("À revoir", "Review again")}</button>
+    <button class="btn ok" id="yes"><i class="fa-solid fa-check"></i> ${T("Je savais", "I knew it")}</button>
   </div>
 </div>`;
       const fc = document.getElementById("fc");
@@ -599,11 +631,11 @@ ${MODULES.map((m, i) => {
   }
 
   function viewFlashHome() {
-    $app.innerHTML = `<div class="page-h"><h1>Flashcards</h1><p class="muted">Répétition espacée (système de Leitner) : les cartes que tu rates reviennent plus souvent. Une carte est « maîtrisée » à partir de la boîte 2.</p></div>
-    <a class="btn" href="#/flash/all" style="margin-bottom:16px"><i class="fa-solid fa-shuffle"></i> Session mixte (20 cartes)</a>
+    $app.innerHTML = `<div class="page-h"><h1>Flashcards</h1><p class="muted">${T("Répétition espacée (système de Leitner) : les cartes que tu rates reviennent plus souvent. Une carte est « maîtrisée » à partir de la boîte 2.", "Spaced repetition (Leitner system): cards you miss come back more often. A card counts as “mastered” from box 2.")}</p></div>
+    <a class="btn" href="#/flash/all" style="margin-bottom:16px"><i class="fa-solid fa-shuffle"></i> ${T("Session mixte (20 cartes)", "Mixed session (20 cards)")}</a>
     <div class="mod-grid">${MODULES.map(m => {
       const k = m.flashcards.filter((_, i) => (S.flash[m.id + ":" + i] || 0) >= 2).length;
-      return `<a class="mod-card card" href="#/flash/${m.id}" style="--c:${m.color}"><div class="mc-top"><span class="mc-icon"><i class="fa-solid ${m.icon}"></i></span></div><h3>${m.title}</h3><div class="bar"><span style="width:${k / m.flashcards.length * 100}%;background:${m.color}"></span></div><div class="small muted">${k}/${m.flashcards.length} maîtrisées</div></a>`;
+      return `<a class="mod-card card" href="#/flash/${m.id}" style="--c:${m.color}"><div class="mc-top"><span class="mc-icon"><i class="fa-solid ${m.icon}"></i></span></div><h3>${m.title}</h3><div class="bar"><span style="width:${k / m.flashcards.length * 100}%;background:${m.color}"></span></div><div class="small muted">${k}/${m.flashcards.length} ${T("maîtrisées", "mastered")}</div></a>`;
     }).join("")}</div>`;
   }
 
@@ -640,17 +672,14 @@ ${langToggle()}
     bindLang(viewInterviews);
   }
 
-  const EN = window.INTERVIEWS_EN || { cats: {}, q: {} };
-  const isEn = () => S.ivLang === "en";
   const catLabel = c => (isEn() && EN.cats[c]) || (c === "Toutes" && isEn() ? "All" : c);
-  const T = (fr, en) => isEn() ? en : fr;
   function langToggle() {
     return `<div class="lang-toggle" role="group" aria-label="Langue / Language">
       <button class="chip ${!isEn() ? "on" : ""}" data-lang="fr">🇫🇷 Français</button>
       <button class="chip ${isEn() ? "on" : ""}" data-lang="en">🇬🇧 English</button></div>`;
   }
   function bindLang(rerender) {
-    $app.querySelectorAll("[data-lang]").forEach(b => b.onclick = () => { S.ivLang = b.dataset.lang; save(); rerender(); });
+    $app.querySelectorAll("[data-lang]").forEach(b => b.onclick = () => setLang(b.dataset.lang));
   }
 
   function ivCard(q) {
@@ -862,15 +891,15 @@ ${S.math.runs.length ? `<div class="card"><div class="card-h"><h3>Tes derniers s
   function viewGlossary() {
     const all = [];
     MODULES.forEach(m => m.flashcards.forEach(c => all.push({ t: c[0], d: c[1], m })));
-    all.sort((a, b) => a.t.localeCompare(b.t, "fr"));
+    all.sort((a, b) => a.t.localeCompare(b.t, S.lang));
     $app.innerHTML = `
-<div class="page-h"><h1>Glossaire</h1><p class="muted">${all.length} termes clés du jargon de salle de marchés.</p></div>
-<input class="search" id="gs" placeholder="Rechercher un terme (ex : duration, CCP, delta)…">
+<div class="page-h"><h1>${T("Glossaire", "Glossary")}</h1><p class="muted">${all.length} ${T("termes clés du jargon de salle de marchés.", "key terms of trading floor jargon.")}</p></div>
+<input class="search" id="gs" placeholder="${T("Rechercher un terme (ex : duration, CCP, delta)…", "Search a term (e.g. duration, CCP, delta)…")}">
 <div class="gloss" id="gl"></div>`;
     const draw = f => {
       const x = f.toLowerCase();
       document.getElementById("gl").innerHTML = all.filter(g => !x || g.t.toLowerCase().includes(x) || g.d.toLowerCase().includes(x))
-        .map(g => `<div class="g card"><b>${esc(g.t)}</b><span>${esc(g.d)}</span><a class="small" href="#/module/${g.m.id}" style="color:${g.m.color}">${g.m.title}</a></div>`).join("") || `<p class="muted">Aucun résultat.</p>`;
+        .map(g => `<div class="g card"><b>${esc(g.t)}</b><span>${esc(g.d)}</span><a class="small" href="#/module/${g.m.id}" style="color:${g.m.color}">${g.m.title}</a></div>`).join("") || `<p class="muted">${T("Aucun résultat.", "No results.")}</p>`;
     };
     draw("");
     document.getElementById("gs").oninput = e => draw(e.target.value);
@@ -941,6 +970,9 @@ ${S.math.runs.length ? `<div class="card"><div class="card-h"><h3>Tes derniers s
 
   window.addEventListener("hashchange", route);
   document.getElementById("burger").onclick = () => document.body.classList.toggle("menu-open");
+  MODULES = localize();
+  document.documentElement.lang = S.lang;
+  document.getElementById("lang-btn").onclick = () => setLang(isEn() ? "fr" : "en");
   checkBadges(); save();
   route();
 })();
