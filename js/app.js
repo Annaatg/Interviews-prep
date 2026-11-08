@@ -54,7 +54,8 @@
       daily: { last: null, count: 0 },
       streak: { count: 0, last: null },
       badges: {},         // { id: date }
-      name: ""
+      name: "",
+      ivLang: "fr"        // langue des questions d’entretien
     };
   }
 
@@ -617,17 +618,18 @@ ${MODULES.map((m, i) => {
     const ok = tot.filter(q => S.interview[q.id] === "ok").length;
     $app.innerHTML = `
 <div class="page-h"><h1>Questions d’entretien</h1><p class="muted">Réfléchis à ta réponse (à voix haute, idéalement en moins de 2 minutes), puis révèle la réponse modèle et auto-évalue-toi. +15 XP par question maîtrisée.</p></div>
+${langToggle()}
 <div class="tabs">
   <button class="tab ${ivFilter.role === "FO" ? "on" : ""}" data-role="FO"><i class="fa-solid fa-chart-line"></i> Front Office</button>
   <button class="tab ${ivFilter.role === "BO" ? "on" : ""}" data-role="BO"><i class="fa-solid fa-gears"></i> Middle & Back Office</button>
   <a class="tab" href="#/simulation"><i class="fa-solid fa-user-tie"></i> Simulation d’entretien</a>
 </div>
 <div class="filters">
-  ${cats.map(c => `<button class="chip ${ivFilter.cat === c ? "on" : ""}" data-cat="${esc(c)}">${c}</button>`).join("")}
+  ${cats.map(c => `<button class="chip ${ivFilter.cat === c ? "on" : ""}" data-cat="${esc(c)}">${catLabel(c)}</button>`).join("")}
   <span class="sep"></span>
-  ${["Toutes", "Non vues", "À revoir", "Maîtrisées"].map(s => `<button class="chip ${ivFilter.status === s ? "on" : ""}" data-st="${s}">${s}</button>`).join("")}
+  ${["Toutes", "Non vues", "À revoir", "Maîtrisées"].map(s => `<button class="chip ${ivFilter.status === s ? "on" : ""}" data-st="${s}">${isEn() ? { "Toutes": "All", "Non vues": "Not seen", "À revoir": "Review again", "Maîtrisées": "Mastered" }[s] : s}</button>`).join("")}
 </div>
-<div class="muted small" style="margin:6px 0 14px">${ok}/${tot.length} maîtrisées</div>
+<div class="muted small" style="margin:6px 0 14px">${ok}/${tot.length} ${T("maîtrisées", "mastered")}</div>
 <div class="iv-list">
   ${list.length ? list.map(q => ivCard(q)).join("") : `<p class="muted">Aucune question pour ce filtre.</p>`}
 </div>`;
@@ -635,16 +637,32 @@ ${MODULES.map((m, i) => {
     $app.querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { ivFilter.cat = b.dataset.cat; viewInterviews(); });
     $app.querySelectorAll("[data-st]").forEach(b => b.onclick = () => { ivFilter.status = b.dataset.st; viewInterviews(); });
     bindIv();
+    bindLang(viewInterviews);
+  }
+
+  const EN = window.INTERVIEWS_EN || { cats: {}, q: {} };
+  const isEn = () => S.ivLang === "en";
+  const catLabel = c => (isEn() && EN.cats[c]) || (c === "Toutes" && isEn() ? "All" : c);
+  const T = (fr, en) => isEn() ? en : fr;
+  function langToggle() {
+    return `<div class="lang-toggle" role="group" aria-label="Langue / Language">
+      <button class="chip ${!isEn() ? "on" : ""}" data-lang="fr">🇫🇷 Français</button>
+      <button class="chip ${isEn() ? "on" : ""}" data-lang="en">🇬🇧 English</button></div>`;
+  }
+  function bindLang(rerender) {
+    $app.querySelectorAll("[data-lang]").forEach(b => b.onclick = () => { S.ivLang = b.dataset.lang; save(); rerender(); });
   }
 
   function ivCard(q) {
     const st = S.interview[q.id];
+    const tr = isEn() && EN.q[q.id];
+    const qq = tr ? tr.q : q.q, qa = tr ? tr.a : q.a;
     return `<div class="iv card ${st || ""}" data-id="${q.id}">
-      <div class="iv-h"><span class="pill">${q.cat}</span><span class="diff">${"●".repeat(q.diff)}${"○".repeat(3 - q.diff)}</span>${st === "ok" ? '<span class="pill ok"><i class="fa-solid fa-check"></i> Maîtrisée</span>' : st === "review" ? '<span class="pill warn">À revoir</span>' : ""}</div>
-      <h3>${q.q}</h3>
-      <button class="btn ghost reveal"><i class="fa-solid fa-eye"></i> Voir la réponse modèle</button>
-      <div class="iv-a" hidden><div class="answer">${q.a}</div>
-        <div class="row-btns"><button class="btn danger ghost rv-no">À revoir</button><button class="btn ok rv-ok"><i class="fa-solid fa-check"></i> Je maîtrise</button></div></div>
+      <div class="iv-h"><span class="pill">${catLabel(q.cat)}</span><span class="diff">${"●".repeat(q.diff)}${"○".repeat(3 - q.diff)}</span>${st === "ok" ? `<span class="pill ok"><i class="fa-solid fa-check"></i> ${T("Maîtrisée", "Mastered")}</span>` : st === "review" ? `<span class="pill warn">${T("À revoir", "Review again")}</span>` : ""}</div>
+      <h3>${qq}</h3>
+      <button class="btn ghost reveal"><i class="fa-solid fa-eye"></i> ${T("Voir la réponse modèle", "Show model answer")}</button>
+      <div class="iv-a" hidden><div class="answer">${qa}</div>
+        <div class="row-btns"><button class="btn danger ghost rv-no">${T("À revoir", "Review again")}</button><button class="btn ok rv-ok"><i class="fa-solid fa-check"></i> ${T("Je maîtrise", "Got it")}</button></div></div>
     </div>`;
   }
 
@@ -665,6 +683,7 @@ ${MODULES.map((m, i) => {
     $app.innerHTML = `
 <div class="page-h"><h1>Simulation d’entretien</h1><p class="muted">Tirage aléatoire de questions. 2 minutes par réponse, à voix haute. Comme en superday.</p></div>
 <div class="sim-setup card">
+  ${langToggle()}
   <h3>Choisis ton format</h3>
   <div class="row-btns">
     <button class="btn" data-sim="FO"><i class="fa-solid fa-chart-line"></i> Front Office (6 questions)</button>
@@ -673,6 +692,7 @@ ${MODULES.map((m, i) => {
   </div>
 </div>`;
     $app.querySelectorAll("[data-sim]").forEach(b => b.onclick = () => runSim(b.dataset.sim));
+    bindLang(viewSimulation);
   }
 
   let simTimer = null;

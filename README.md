@@ -5,7 +5,7 @@ Application web **gamifiée** pour apprendre la finance de marché et préparer 
 ## Contenu
 - **11 modules** : salle de marchés, taux & obligations, change (FX), actions, dérivés & options, crédit, matières premières, macro, risque & P&L, post-trade (middle/back office), maths du trader
 - **~100 questions de quiz** avec explications, **85 flashcards** (répétition espacée Leitner), glossaire
-- **57 questions d'entretien** (Front Office : comportemental, marchés & pitch, technique, brain teasers ; Middle/Back Office : opérations, risque, comportemental) avec réponses modèles et simulation chronométrée
+- **57 questions d’entretien en français et en anglais** (sélecteur FR/EN) (Front Office : comportemental, marchés & pitch, technique, brain teasers ; Middle/Back Office : opérations, risque, comportemental) avec réponses modèles et simulation chronométrée
 - **Trading Arena** : sprint de calcul mental (60 s) et jeu de market making sur 3 dés
 
 ## Gamification & suivi

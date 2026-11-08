@@ -291,3 +291,4 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
   .fc-front { font-size: 1.3rem; }
   .die { width: 60px; height: 60px; }
 }
+.lang-toggle { display: flex; gap: 6px; margin-bottom: 14px; }
